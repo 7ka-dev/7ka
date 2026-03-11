@@ -1,0 +1,1 @@
+export { useTerminalInput } from "./model";

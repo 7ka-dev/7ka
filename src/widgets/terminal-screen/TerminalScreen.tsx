@@ -1,6 +1,8 @@
+import { useCallback } from "react";
 import type { JSX } from "react";
 
 import { useBootSequence } from "@/features/terminal-boot";
+import { useTerminalInput } from "@/features/terminal-input";
 import { ASCII_LOGO } from "@/shared/config";
 import { ScanLines } from "@/shared/ui/scanlines";
 import { TerminalMetaBar } from "@/shared/ui/terminal-meta-bar";
@@ -8,6 +10,15 @@ import { Vignette } from "@/shared/ui/vignette";
 
 export function TerminalScreen(): JSX.Element {
   const { visibleLines, isDone } = useBootSequence();
+
+  const handleSubmit = useCallback((_command: string): void => {
+    // command processing — next
+  }, []);
+
+  const { input } = useTerminalInput({
+    onSubmit: handleSubmit,
+    enabled: isDone,
+  });
 
   return (
     <div
@@ -73,10 +84,10 @@ export function TerminalScreen(): JSX.Element {
         ))}
       </div>
 
-      {/* Input line — shown only after boot completes */}
+      {/* Input line */}
       {isDone && (
         <div
-          className="flex items-center gap-2 pt-2 border-t"
+          className="flex items-center pt-2 border-t"
           style={{
             fontSize: "clamp(0.6rem, 1.05vw, 0.8rem)",
             borderColor: "#0a3d00",
@@ -84,7 +95,8 @@ export function TerminalScreen(): JSX.Element {
             textShadow: "0 0 6px rgba(57,255,20,0.3)",
           }}
         >
-          <span className="whitespace-nowrap">guest@7ka.dev:~$</span>
+          <span className="whitespace-nowrap">guest@7ka.dev:~$&nbsp;</span>
+          <span>{input}</span>
           <span
             className="inline-block w-[0.55em] h-[1em] align-middle animate-pulse"
             style={{
