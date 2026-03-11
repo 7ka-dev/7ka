@@ -1,24 +1,101 @@
-import { useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { JSX } from "react";
 
-import { useBootSequence } from "@/features/terminal-boot";
+import { useTerminalState } from "@/entities/terminal";
+import { resolveCommand, makeTerminalLine } from "@/features/terminal-command";
+import type { CommandBlock } from "@/features/terminal-command";
 import { useTerminalInput } from "@/features/terminal-input";
 import { ASCII_LOGO } from "@/shared/config";
+import { makeLine } from "@/shared/lib";
 import { ScanLines } from "@/shared/ui/scanlines";
 import { TerminalMetaBar } from "@/shared/ui/terminal-meta-bar";
 import { Vignette } from "@/shared/ui/vignette";
 
+const PROMPT = "guest@7ka.dev:~$";
+
 export function TerminalScreen(): JSX.Element {
-  const { visibleLines, isDone } = useBootSequence();
+  const { history, addLines, clearHistory } = useTerminalState();
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const bootedRef = useRef(false);
+  const busyRef = useRef(false);
 
-  const handleSubmit = useCallback((_command: string): void => {
-    // command processing — next
-  }, []);
+  const playBlock = useCallback(
+    (block: CommandBlock): void => {
+      busyRef.current = true;
 
-  const { input } = useTerminalInput({
-    onSubmit: handleSubmit,
-    enabled: isDone,
-  });
+      if (block.command && block.command !== "__boot__") {
+        addLines([makeTerminalLine(`${PROMPT} ${block.command}`, true)]);
+      }
+
+      let delay = 0;
+      for (const [i, line] of block.output.entries()) {
+        delay += line.printTime;
+        setTimeout(() => {
+          addLines([makeLine(line.text)]);
+          if (i === block.output.length - 1) {
+            busyRef.current = false;
+            block.onComplete?.();
+          }
+        }, delay);
+      }
+
+      if (block.output.length === 0) {
+        busyRef.current = false;
+        block.onComplete?.();
+      }
+    },
+    [addLines],
+  );
+
+  useEffect(() => {
+    if (bootedRef.current) return;
+    bootedRef.current = true;
+    const result = resolveCommand("__boot__");
+    if (result.type === "block") playBlock(result.block);
+  }, [playBlock]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "instant" });
+  }, [history]);
+
+  const handleSubmit = useCallback(
+    (raw: string): void => {
+      if (busyRef.current) return;
+
+      const result = resolveCommand(raw);
+
+      switch (result.type) {
+        case "clear":
+          clearHistory();
+          break;
+        case "ssh":
+          playBlock({
+            command: raw,
+            output: [
+              {
+                text: "INITIATING CONNECTION TO <g>UNIT-7 MAINFRAME</g>...",
+                printTime: 0,
+              },
+            ],
+          });
+          break;
+        case "block":
+          playBlock(result.block);
+          break;
+        case "unknown":
+          addLines([makeTerminalLine(`${PROMPT} ${raw}`, true)]);
+          addLines([
+            makeLine(
+              `<e>command not found: ${raw}</e> <d>— try <g>help</g></d>`,
+            ),
+          ]);
+          break;
+      }
+    },
+    [playBlock, addLines, clearHistory],
+  );
+
+  const { input } = useTerminalInput({ onSubmit: handleSubmit, enabled: true });
 
   return (
     <div
@@ -29,7 +106,6 @@ export function TerminalScreen(): JSX.Element {
       <Vignette />
       <TerminalMetaBar />
 
-      {/* ASCII Logo */}
       <pre
         className="leading-snug mb-6 whitespace-pre select-none"
         style={{
@@ -41,71 +117,41 @@ export function TerminalScreen(): JSX.Element {
         {ASCII_LOGO}
       </pre>
 
-      {/* Boot lines */}
-      <div className="flex-1 overflow-hidden pb-4">
-        {visibleLines.map((line, i) => (
+      <div className="flex-1 overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {history.map((line) => (
           <div
-            key={i}
+            key={line.id}
             className="leading-loose tracking-[0.04em]"
             style={{
               fontSize: "clamp(0.6rem, 1.05vw, 0.8rem)",
               color: "#39ff14",
               textShadow: "0 0 6px rgba(57,255,20,0.3)",
             }}
-          >
-            {line.status === null ? (
-              <span>{line.text}</span>
-            ) : (
-              <>
-                <span>{line.text} </span>
-                {line.status === "OK" && (
-                  <span
-                    style={{
-                      color: "#39ff14",
-                      textShadow: "0 0 6px rgba(57,255,20,0.5)",
-                    }}
-                  >
-                    OK
-                  </span>
-                )}
-                {(line.status === "WARN" || line.status === "FOUND") && (
-                  <span
-                    style={{
-                      color: "#ffb300",
-                      textShadow: "0 0 8px rgba(255,179,0,0.4)",
-                    }}
-                  >
-                    {line.warn}
-                  </span>
-                )}
-              </>
-            )}
-          </div>
+            dangerouslySetInnerHTML={{ __html: line.html }}
+          />
         ))}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Input line */}
-      {isDone && (
-        <div
-          className="flex items-center pt-2 border-t"
+      <div
+        className="flex items-center pt-2 border-t"
+        style={{
+          fontSize: "clamp(0.6rem, 1.05vw, 0.8rem)",
+          borderColor: "#0a3d00",
+          color: "#39ff14",
+          textShadow: "0 0 6px rgba(57,255,20,0.3)",
+        }}
+      >
+        <span className="whitespace-nowrap">{PROMPT}&nbsp;</span>
+        <span>{input}</span>
+        <span
+          className="inline-block w-[0.55em] h-[1em] align-middle animate-pulse"
           style={{
-            fontSize: "clamp(0.6rem, 1.05vw, 0.8rem)",
-            borderColor: "#0a3d00",
-            color: "#39ff14",
-            textShadow: "0 0 6px rgba(57,255,20,0.3)",
+            background: "#39ff14",
+            boxShadow: "0 0 6px rgba(57,255,20,0.8)",
           }}
-        >
-          <span className="whitespace-nowrap">guest@7ka.dev:~$&nbsp;</span>
-          <span>{input}</span>
-          <span
-            className="inline-block w-[0.55em] h-[1em] align-middle animate-pulse"
-            style={{
-              background: "#39ff14",
-              boxShadow: "0 0 6px rgba(57,255,20,0.8)",
-            }}
-          />
-        </div>
-      )}
+        />
+      </div>
     </div>
   );
 }

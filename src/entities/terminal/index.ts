@@ -1,1 +1,2 @@
-export type { BootLine, BootLineStatus, TerminalState } from "./model";
+export { useTerminalState } from "./model";
+export type { TerminalState } from "./model";

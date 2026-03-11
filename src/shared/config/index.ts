@@ -1,1 +1,1 @@
-export { ASCII_LOGO, BOOT_LINES } from './terminal'
+export { ASCII_LOGO } from './terminal'
