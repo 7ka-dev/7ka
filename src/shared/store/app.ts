@@ -4,11 +4,14 @@ import type { TerminalLine } from '@/shared/lib'
 
 type Machine = 'gateway' | 'mainframe'
 type GatewayView = 'terminal' | 'browser'
+type OsSection = 'agents' | 'ops' | 'map' | 'logs' | 'tools' | null
 
 interface AppStore {
   machine: Machine
   gatewayView: GatewayView
   terminalHistory: TerminalLine[]
+  activeSection: OsSection
+  setSection: (section: OsSection) => void
 
   toMainframe: () => void
   toGateway: () => void
@@ -41,4 +44,8 @@ export const useAppStore = create<AppStore>((set) => ({
   clearHistory: (): void => {
     set({ terminalHistory: [] })
   },
+  activeSection: null,
+  setSection: (section): void => { set({ activeSection: section }); },
 }))
+
+export type { OsSection }
