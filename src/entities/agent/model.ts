@@ -1,5 +1,11 @@
 export type AgentStatus = 'active' | 'ghost' | 'terminated'
 
+export interface AgentLocation {
+  city: string
+  lat: number
+  lng: number
+}
+
 export interface Agent {
   id: string
   status: AgentStatus
@@ -10,6 +16,7 @@ export interface Agent {
   background: string
   operationalHistory: string
   commandNote: string
+  location?: AgentLocation
 }
 
 export const AGENTS: Agent[] = [
@@ -23,6 +30,7 @@ export const AGENTS: Agent[] = [
     background: '[PLACEHOLDER: Agent 001 to fill]',
     operationalHistory: '[PLACEHOLDER: Agent 001 to fill]',
     commandNote: '"Shows up. Writes code. Occasionally asks good questions. We keep them."',
+    location: { city: 'ST. PETERSBURG', lat: 59.9, lng: 30.3 },
   },
   {
     id: '002',
@@ -34,6 +42,7 @@ export const AGENTS: Agent[] = [
     background: '[PLACEHOLDER: Agent 002 to fill]',
     operationalHistory: '[PLACEHOLDER: Agent 002 to fill]',
     commandNote: '"Keeps the lights on. Rarely explains how. We have stopped asking."',
+    location: { city: 'YEKATERINBURG', lat: 56.8, lng: 60.6 },
   },
   {
     id: '003',
@@ -45,6 +54,7 @@ export const AGENTS: Agent[] = [
     background: '[PLACEHOLDER: Agent 003 to fill]',
     operationalHistory: '[PLACEHOLDER: Agent 003 to fill]',
     commandNote: '"Makes things look intentional. Even when they are not."',
+    location: { city: 'LESNOY', lat: 58.6, lng: 59.8 },
   },
   {
     id: '004',
@@ -56,6 +66,7 @@ export const AGENTS: Agent[] = [
     background: '[PLACEHOLDER: Agent 004 to fill]',
     operationalHistory: '[PLACEHOLDER: Agent 004 to fill]',
     commandNote: '"Talks to machines. Machines listen. We find this unsettling."',
+    location: { city: 'GUNMA', lat: 36.5, lng: 139.0 },
   },
   {
     id: '007',
