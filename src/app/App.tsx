@@ -1,9 +1,13 @@
-import type { JSX } from "react";
+import type { JSX } from 'react'
 
-import { TerminalPage } from "@/pages/terminal";
+import { GatewayMachine } from '@/pages/gateway'
+import { MainframeMachine } from '@/pages/mainframe'
+import { useAppStore } from '@/shared/store'
 
-function App(): JSX.Element {
-  return <TerminalPage />;
+export default function App(): JSX.Element {
+  const machine = useAppStore(s => s.machine)
+
+  return machine === 'gateway'
+    ? <GatewayMachine />
+    : <MainframeMachine />
 }
-
-export default App;
