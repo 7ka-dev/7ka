@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 
 import { AgentsSection } from '@/pages/mainframe/sections/AgentsSection'
+import { OpsSection } from '@/pages/mainframe/sections/OpsSection'
 import { useAppStore } from '@/shared/store'
 import { OsSidebar } from '@/widgets/os-sidebar'
 
@@ -40,7 +41,7 @@ export function OsShell(): JSX.Element {
           )}
 
           {activeSection === 'agents' && <AgentsSection />}
-          {activeSection === 'ops' && <div style={{ color: '#c8a84b' }}>OPS PLACEHOLDER</div>}
+          {activeSection === 'ops' && <OpsSection />}
           {activeSection === 'map' && <div style={{ color: '#c8a84b' }}>MAP PLACEHOLDER</div>}
           {activeSection === 'logs' && <div style={{ color: '#c8a84b' }}>LOGS PLACEHOLDER</div>}
           {activeSection === 'tools' && <div style={{ color: '#c8a84b' }}>TOOLS PLACEHOLDER</div>}
