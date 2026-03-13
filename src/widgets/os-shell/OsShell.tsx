@@ -6,6 +6,7 @@ import { AgentsSection } from '@/pages/mainframe/sections/AgentsSection'
 import { MapSection } from '@/pages/mainframe/sections/MapSection'
 import { OpsSection } from '@/pages/mainframe/sections/OpsSection'
 import { useAppStore } from '@/shared/store'
+import { ScanLines } from '@/shared/ui/scanlines'
 import { OsSidebar } from '@/widgets/os-sidebar'
 
 const ACTIVE_AGENTS = AGENTS.filter((a) => a.status === 'active').length
@@ -63,6 +64,7 @@ export function OsShell(): JSX.Element {
 
   return (
     <div className="flex flex-col h-full">
+      <ScanLines />
       <OsTopBar />
 
       <div className="flex flex-1 overflow-hidden">
