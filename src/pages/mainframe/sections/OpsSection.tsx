@@ -1,9 +1,7 @@
-import { useState } from 'react'
 import type { JSX } from 'react'
 
 import { OPERATIONS, INCIDENT_LOG } from '@/entities/operation'
 import type { Operation } from '@/entities/operation'
-import { OsWindow } from '@/widgets/os-window'
 
 // ─── stamp system ─────────────────────────────────────────────────────────────
 
@@ -53,38 +51,24 @@ function OpCard({ op, onClick }: { op: Operation; onClick: () => void }): JSX.El
     <button
       onClick={onClick}
       className="relative text-left border overflow-hidden cursor-pointer flex flex-col"
-      style={{
-        height: '160px',
-        background: '#f0ebe0',
-        borderColor: '#c8b898',
-        boxShadow: '2px 2px 0 rgba(0,0,0,0.15)',
-      }}
+      style={{ height: '160px', background: '#f0ebe0', borderColor: '#c8b898', boxShadow: '2px 2px 0 rgba(0,0,0,0.15)' }}
     >
-      {/* Folder tab */}
       <div className="px-4 py-1.5 border-b shrink-0" style={{ background: '#e0d8c8', borderColor: '#c8b898' }}>
-        <span className="text-xs tracking-[0.2em] uppercase" style={{ color: '#8a7a60' }}>
-          CASE-{op.id}
-        </span>
+        <span className="text-xs tracking-[0.2em] uppercase" style={{ color: '#8a7a60' }}>CASE-{op.id}</span>
       </div>
-
-      {/* Name */}
       <div className="px-4 pt-3 pb-2 flex-1">
         <div className="text-base font-bold tracking-[0.05em] uppercase line-clamp-2" style={{ color: '#1a1408' }}>
           {op.name}
         </div>
       </div>
-
-      {/* Stamps row — bottom, flowing naturally */}
       <div className="px-4 pb-3 flex flex-wrap gap-2 items-end">
-        {stamps.map((stamp, i) => (
-          <StampBadge key={i} stamp={stamp} />
-        ))}
+        {stamps.map((stamp, i) => <StampBadge key={i} stamp={stamp} />)}
       </div>
     </button>
   )
 }
 
-// ─── op dossier ───────────────────────────────────────────────────────────────
+// ─── op dossier (exported for OsShell) ───────────────────────────────────────
 
 const LEVEL_COLOR: Record<string, string> = {
   normal:   '#6a5a40',
@@ -92,47 +76,40 @@ const LEVEL_COLOR: Record<string, string> = {
   critical: '#8b1a1a',
 }
 
-function OpDossier({ op }: { op: Operation }): JSX.Element {
+export function OpDossier({ opId }: { opId: string }): JSX.Element {
+  const op = OPERATIONS.find(o => o.id === opId)
+
+  if (!op) {
+    return <div className="text-sm" style={{ color: '#8b1a1a' }}>CASE FILE NOT FOUND.</div>
+  }
+
   const stamps = getStamps(op)
 
   return (
     <div className="flex flex-col gap-6">
-
-      {/* Header */}
       <div className="relative pb-6 border-b" style={{ borderColor: '#c8b898' }}>
         <div
           className="h-[3px] mb-4"
           style={{ background: 'repeating-linear-gradient(90deg,#1a3a6b 0,#1a3a6b 10px,transparent 10px,transparent 14px)' }}
         />
-        <div className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: '#8a7a60' }}>
-          CASE-{op.id}
-        </div>
-        <div className="text-xl font-bold tracking-[0.08em] uppercase mb-4" style={{ color: '#1a1408' }}>
-          {op.name}
-        </div>
+        <div className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: '#8a7a60' }}>CASE-{op.id}</div>
+        <div className="text-xl font-bold tracking-[0.08em] uppercase mb-4" style={{ color: '#1a1408' }}>{op.name}</div>
         <div className="flex flex-col gap-2 mb-4">
           {[
             { label: 'STATUS', value: op.status.toUpperCase() },
             { label: 'AGENTS', value: op.agents.map(a => `AGENT-${a}`).join(', ') },
           ].map(({ label, value }) => (
             <div key={label} className="flex gap-4">
-              <span className="text-xs tracking-[0.15em] shrink-0" style={{ color: '#8a7a60', width: '65px' }}>
-                {label}
-              </span>
+              <span className="text-xs tracking-[0.15em] shrink-0" style={{ color: '#8a7a60', width: '65px' }}>{label}</span>
               <span className="text-sm font-medium" style={{ color: '#1a1408' }}>{value}</span>
             </div>
           ))}
         </div>
-
-        {/* Stamps */}
         <div className="flex flex-wrap gap-3">
-          {stamps.map((stamp, i) => (
-            <StampBadge key={i} stamp={stamp} />
-          ))}
+          {stamps.map((stamp, i) => <StampBadge key={i} stamp={stamp} />)}
         </div>
       </div>
 
-      {/* Brief */}
       <div>
         <div className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: '#8a7a60' }}>BRIEF</div>
         {op.desc !== null
@@ -141,7 +118,6 @@ function OpDossier({ op }: { op: Operation }): JSX.Element {
         }
       </div>
 
-      {/* Assigned personnel */}
       <div>
         <div className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: '#8a7a60' }}>ASSIGNED PERSONNEL</div>
         <div className="flex flex-col gap-1">
@@ -151,7 +127,6 @@ function OpDossier({ op }: { op: Operation }): JSX.Element {
         </div>
       </div>
 
-      {/* Incident log */}
       {op.hasIncident && (
         <div className="border-t pt-4" style={{ borderColor: '#c8b898' }}>
           <div className="text-xs tracking-[0.2em] uppercase mb-4" style={{ color: '#8b1a1a' }}>
@@ -165,14 +140,10 @@ function OpDossier({ op }: { op: Operation }): JSX.Element {
                 </span>
                 <div className="flex flex-col gap-1">
                   {entry.text !== null && (
-                    <span className="text-sm leading-relaxed" style={{ color: LEVEL_COLOR[entry.level] }}>
-                      {entry.text}
-                    </span>
+                    <span className="text-sm leading-relaxed" style={{ color: LEVEL_COLOR[entry.level] }}>{entry.text}</span>
                   )}
                   {entry.note !== null && (
-                    <span className="text-xs leading-relaxed italic" style={{ color: '#8a7a60' }}>
-                      {entry.note}
-                    </span>
+                    <span className="text-xs leading-relaxed italic" style={{ color: '#8a7a60' }}>{entry.note}</span>
                   )}
                 </div>
               </div>
@@ -181,23 +152,19 @@ function OpDossier({ op }: { op: Operation }): JSX.Element {
         </div>
       )}
 
-      {/* Signal logs link */}
       <div className="border-t pt-4" style={{ borderColor: '#c8b898' }}>
         <div className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: '#8a7a60' }}>SIGNAL LOGS</div>
         <div className="text-xs tracking-wider" style={{ color: '#c8b898' }}>
           [PLACEHOLDER: link to signal log entries for this case]
         </div>
       </div>
-
     </div>
   )
 }
 
 // ─── section ──────────────────────────────────────────────────────────────────
 
-export function OpsSection(): JSX.Element {
-  const [selected, setSelected] = useState<Operation | null>(null)
-
+export function OpsSection({ onOpen }: { onOpen: (id: string) => void }): JSX.Element {
   return (
     <>
       <div className="mb-8">
@@ -211,26 +178,11 @@ export function OpsSection(): JSX.Element {
           {OPERATIONS.filter(o => o.status === 'classified').length} CLASSIFIED
         </div>
       </div>
-
       <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
         {OPERATIONS.map(op => (
-          <OpCard
-            key={op.id}
-            op={op}
-            onClick={() => { setSelected(op) }}
-          />
+          <OpCard key={op.id} op={op} onClick={() => { onOpen(op.id) }} />
         ))}
       </div>
-
-      {selected !== null && (
-        <OsWindow
-          title={`CASE FILE — ${selected.name}`}
-          mode="landscape"
-          onClose={() => { setSelected(null) }}
-        >
-          <OpDossier op={selected} />
-        </OsWindow>
-      )}
     </>
   )
 }

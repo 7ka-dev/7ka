@@ -3,13 +3,18 @@ import type { JSX } from 'react'
 
 import { AGENTS } from '@/entities/agent'
 import { AgentsSection } from '@/pages/mainframe/sections/AgentsSection'
+import { AgentDossier } from '@/pages/mainframe/sections/AgentsSection'
 import { MapSection } from '@/pages/mainframe/sections/MapSection'
 import { OpsSection } from '@/pages/mainframe/sections/OpsSection'
+import { OpDossier } from '@/pages/mainframe/sections/OpsSection'
 import { useAppStore } from '@/shared/store'
 import { ScanLines } from '@/shared/ui/scanlines'
 import { OsSidebar } from '@/widgets/os-sidebar'
+import { OsWindow } from '@/widgets/os-window'
+import { useWindowManager } from '@/widgets/os-window/useWindowManager'
 
 const ACTIVE_AGENTS = AGENTS.filter((a) => a.status === 'active').length
+
 const ONE_SECOND_MS = 1000
 
 function useJstClock(): string {
@@ -17,11 +22,11 @@ function useJstClock(): string {
     new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false }),
   )
 
-  useEffect(() => {
+  useEffect((): (() => void) => {
     const id = setInterval(() => {
       setTime(new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false }))
     }, ONE_SECOND_MS)
-    return (): void => {
+    return () => {
       clearInterval(id)
     }
   }, [])
@@ -40,7 +45,6 @@ function OsTopBar(): JSX.Element {
       <span className="text-base tracking-[0.25em] uppercase" style={{ color: '#5a4a2a' }}>
         UNIT-7 // BUILD 0.7.4-UNSTABLE
       </span>
-
       <div className="flex items-center gap-8 text-sm tracking-[0.15em] uppercase" style={{ color: '#3a2e18' }}>
         <span>
           MEM: 640K <span style={{ color: '#5a4a2a' }}>(should be enough)</span>
@@ -61,16 +65,18 @@ function OsTopBar(): JSX.Element {
 
 export function OsShell(): JSX.Element {
   const activeSection = useAppStore((s) => s.activeSection)
+  const { windows, openWindow, closeWindow, focusWindow, moveWindow } = useWindowManager()
 
   return (
     <div className="flex flex-col h-full">
-      <ScanLines />
       <OsTopBar />
 
       <div className="flex flex-1 overflow-hidden">
         <OsSidebar />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          <ScanLines />
+
           {/* Section label bar */}
           <div
             className="flex items-center justify-between px-6 py-3 border-b shrink-0"
@@ -85,7 +91,7 @@ export function OsShell(): JSX.Element {
           </div>
 
           {/* Main area */}
-          <div className="flex-1 overflow-hidden p-8">
+          <div className="flex-1 overflow-y-auto p-8 relative">
             {activeSection === null && (
               <div
                 className="h-full flex flex-col items-center justify-center gap-4 select-none"
@@ -97,13 +103,32 @@ export function OsShell(): JSX.Element {
                 </div>
               </div>
             )}
-
-            {activeSection === 'agents' && <AgentsSection />}
-            {activeSection === 'ops' && <OpsSection />}
+            {activeSection === 'agents' && (
+              <AgentsSection
+                onOpen={(id) => {
+                  openWindow('agent', id)
+                }}
+              />
+            )}
+            {activeSection === 'ops' && (
+              <OpsSection
+                onOpen={(id) => {
+                  openWindow('op', id)
+                }}
+              />
+            )}
             {activeSection === 'map' && <MapSection />}
             {activeSection === 'logs' && <div style={{ color: '#c8a84b' }}>LOGS PLACEHOLDER</div>}
             {activeSection === 'tools' && <div style={{ color: '#c8a84b' }}>TOOLS PLACEHOLDER</div>}
           </div>
+
+          {/* Floating windows */}
+          {windows.map((win) => (
+            <OsWindow key={win.id} win={win} onClose={closeWindow} onFocus={focusWindow} onMove={moveWindow}>
+              {win.kind === 'agent' && <AgentDossier agentId={win.entityId} />}
+              {win.kind === 'op' && <OpDossier opId={win.entityId} />}
+            </OsWindow>
+          ))}
         </div>
       </div>
     </div>
