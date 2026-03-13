@@ -8,6 +8,7 @@ export interface AgentLocation {
 
 export interface Agent {
   id: string
+  codename: string
   status: AgentStatus
   role: string
   industry: string
@@ -22,6 +23,7 @@ export interface Agent {
 export const AGENTS: Agent[] = [
   {
     id: '001',
+    codename: 'IRON-WOLF',
     status: 'active',
     role: 'Full-Stack Engineer',
     industry: '██████████',
@@ -34,6 +36,7 @@ export const AGENTS: Agent[] = [
   },
   {
     id: '002',
+    codename: 'SILENT-NODE',
     status: 'active',
     role: 'Backend / Infra',
     industry: '██████████',
@@ -46,6 +49,7 @@ export const AGENTS: Agent[] = [
   },
   {
     id: '003',
+    codename: 'PHANTOM-HAND',
     status: 'active',
     role: 'Product / Design',
     industry: '██████████',
@@ -58,6 +62,7 @@ export const AGENTS: Agent[] = [
   },
   {
     id: '004',
+    codename: 'DEEP-SIGNAL',
     status: 'active',
     role: 'Data / ML',
     industry: '██████████',
@@ -70,6 +75,7 @@ export const AGENTS: Agent[] = [
   },
   {
     id: '007',
+    codename: '[REDACTED]',
     status: 'ghost',
     role: '████████████████',
     industry: '████████████████████████',
@@ -81,6 +87,7 @@ export const AGENTS: Agent[] = [
   },
   {
     id: '0010',
+    codename: 'FALLEN-KEY',
     status: 'terminated',
     role: 'Junior Developer',
     industry: 'intern. just an intern.',
