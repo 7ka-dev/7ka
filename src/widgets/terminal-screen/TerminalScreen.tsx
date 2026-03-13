@@ -14,63 +14,70 @@ import { Vignette } from '@/shared/ui/vignette'
 const PROMPT = 'guest@7ka.dev:~$'
 
 export function TerminalScreen(): JSX.Element {
-  const history    = useAppStore(s => s.terminalHistory)
-  const addLines   = useAppStore(s => s.addLines)
-  const bottomRef  = useRef<HTMLDivElement>(null)
-  const bootedRef  = useRef(false)
-  const busyRef    = useRef(false)
+  const history = useAppStore((s) => s.terminalHistory)
+  const addLines = useAppStore((s) => s.addLines)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const hasBooted = useAppStore((s) => s.hasBooted)
+  const setHasBooted = useAppStore((s) => s.setHasBooted)
+  const busyRef = useRef(false)
 
-  const playBlock = useCallback((block: CommandBlock): void => {
-    busyRef.current = true
+  const playBlock = useCallback(
+    (block: CommandBlock): void => {
+      busyRef.current = true
 
-    if (block.command && block.command !== '__boot__') {
-      addLines([makeTerminalLine(`${PROMPT} ${block.command}`, true)])
-    }
+      if (block.command && block.command !== '__boot__') {
+        addLines([makeTerminalLine(`${PROMPT} ${block.command}`, true)])
+      }
 
-    let delay = 0
-    for (const [i, line] of block.output.entries()) {
-      delay += line.printTime
-      setTimeout(() => {
-        addLines([makeLine(line.text)])
-        if (i === block.output.length - 1) {
-          busyRef.current = false
-          block.onComplete?.()
-        }
-      }, delay)
-    }
+      let delay = 0
+      for (const [i, line] of block.output.entries()) {
+        delay += line.printTime
+        setTimeout(() => {
+          addLines([makeLine(line.text)])
+          if (i === block.output.length - 1) {
+            busyRef.current = false
+            block.onComplete?.()
+          }
+        }, delay)
+      }
 
-    if (block.output.length === 0) {
-      busyRef.current = false
-      block.onComplete?.()
-    }
-  }, [addLines])
+      if (block.output.length === 0) {
+        busyRef.current = false
+        block.onComplete?.()
+      }
+    },
+    [addLines],
+  )
 
   useEffect(() => {
-    if (bootedRef.current) return
-    bootedRef.current = true
+    if (hasBooted) return
+    setHasBooted() // ← set immediately, before playBlock
     const result = resolveCommand('__boot__')
     if (result.type === 'block') playBlock(result.block)
-  }, [playBlock])
+  }, [playBlock, setHasBooted, hasBooted])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'instant' })
   }, [history])
 
-  const handleSubmit = useCallback((raw: string): void => {
-    if (busyRef.current) return
+  const handleSubmit = useCallback(
+    (raw: string): void => {
+      if (busyRef.current) return
 
-    const result = resolveCommand(raw)
+      const result = resolveCommand(raw)
 
-    switch (result.type) {
-      case 'block':
-        playBlock(result.block)
-        break
-      case 'unknown':
-        addLines([makeTerminalLine(`${PROMPT} ${raw}`, true)])
-        addLines([makeLine(`<e>command not found: ${raw}</e> <d>— try <g>help</g></d>`)])
-        break
-    }
-  }, [playBlock, addLines])
+      switch (result.type) {
+        case 'block':
+          playBlock(result.block)
+          break
+        case 'unknown':
+          addLines([makeTerminalLine(`${PROMPT} ${raw}`, true)])
+          addLines([makeLine(`<e>command not found: ${raw}</e> <d>— try <g>help</g></d>`)])
+          break
+      }
+    },
+    [playBlock, addLines],
+  )
 
   const { input } = useTerminalInput({ onSubmit: handleSubmit, enabled: true })
 
@@ -95,7 +102,7 @@ export function TerminalScreen(): JSX.Element {
       </pre>
 
       <div className="flex-1 overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {history.map(line => (
+        {history.map((line) => (
           <div
             key={line.id}
             className="leading-loose tracking-[0.04em]"

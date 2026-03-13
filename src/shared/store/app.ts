@@ -11,8 +11,9 @@ interface AppStore {
   gatewayView: GatewayView
   terminalHistory: TerminalLine[]
   activeSection: OsSection
+  hasBooted: boolean
   setSection: (section: OsSection) => void
-
+  setHasBooted: () => void
   toMainframe: () => void
   toGateway: () => void
   openBrowser: () => void
@@ -45,7 +46,13 @@ export const useAppStore = create<AppStore>((set) => ({
     set({ terminalHistory: [] })
   },
   activeSection: null,
-  setSection: (section): void => { set({ activeSection: section }); },
+  setSection: (section): void => {
+    set({ activeSection: section })
+  },
+  hasBooted: false,
+  setHasBooted: (): void => {
+    set({ hasBooted: true })
+  },
 }))
 
 export type { OsSection }
