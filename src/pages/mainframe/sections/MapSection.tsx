@@ -36,43 +36,51 @@ interface MapPanel {
 
 // ─── layout ───────────────────────────────────────────────────────────────────
 
-const INSET_WIDTH_RATIO = 0.26
-const INSET_HEIGHT_RATIO = 0.4
-const MAP_FILL_FACTOR = 0.96
+const INSET_WIDTH_RATIO  = 0.26
+const INSET_HEIGHT_RATIO = 0.40
+const MAP_FILL_FACTOR    = 0.96
 
 // ─── geography ────────────────────────────────────────────────────────────────
 
 const BOUNDS_EURASIA: GeoBounds = { lngMin: -15, latMin: 35, lngMax: 140, latMax: 72 }
-const BOUNDS_JAPAN: GeoBounds = { lngMin: 128, latMin: 30, lngMax: 148, latMax: 46 }
+const BOUNDS_JAPAN:   GeoBounds = { lngMin: 128, latMin: 30, lngMax: 148, latMax: 46 }
 
 const PACIFIC_LNG_THRESHOLD = 128
 
-// ─── dots ─────────────────────────────────────────────────────────────────────
+// ─── city display names (cover names) ────────────────────────────────────────
 
-const DEFAULT_LABEL_OFFSET = { x: 8, y: 4 } as const
+const CITY_DISPLAY: Record<string, string> = {
+  '001': 'LENINGRAD',
+  '002': 'SVERDLOVSK',
+  '003': 'SVERDLOVSK-45',
+  '004': 'KANTŌ REGION',
+}
+
+// ─── label offsets ────────────────────────────────────────────────────────────
+
+const DEFAULT_LABEL_OFFSET = { x: 12, y: 4 } as const
 
 const LABEL_OFFSETS: Record<string, { x: number; y: number }> = {
-  '001': { x: -95, y: 4 },
-  '002': { x: 8, y: 18 },
-  '003': { x: 8, y: -12 },
-  '004': { x: -80, y: 4 },
+  '001': { x: -110, y: 4  },
+  '002': { x: 12,   y: 20 },
+  '003': { x: 12,   y: -14 },
+  '004': { x: -100, y: 4  },
 }
 
 // ─── visual style ─────────────────────────────────────────────────────────────
 
 const MAP_STYLE = {
-  bg: '#0a0905',
-  land: '#1a1408',
-  border: '#2a2015',
-  dot: '#c8a84b',
-  dotActive: '#f0c040',
-  dotRing: '#f0c040',
-  dotRingOpacity: 0.3,
-  label: '#8a7040',
-  labelActive: '#f0c040',
-  agentId: '#5a4a2a',
-  leaderLine: '#3a2e18',
-  font: "'IBM Plex Mono', monospace",
+  bg:             '#0a0905',
+  land:           '#1e1a10',
+  border:         '#3a2e18',
+  dot:            '#c8a84b',
+  dotActive:      '#f0c040',
+  dotGlow:        '#f0c040',
+  label:          '#8a7040',
+  labelActive:    '#f0c040',
+  agentId:        '#5a4a2a',
+  leaderLine:     '#3a2e18',
+  font:           "'IBM Plex Mono', monospace",
 } as const
 
 // ─── world atlas ──────────────────────────────────────────────────────────────
@@ -81,9 +89,9 @@ const WORLD_ATLAS_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-11
 
 // ─── agent data ───────────────────────────────────────────────────────────────
 
-const AGENTS_WITH_LOCATION = AGENTS.filter((a) => a.status === 'active' && a.location !== undefined)
-const JAPAN_AGENTS = AGENTS_WITH_LOCATION.filter((a) => (a.location?.lng ?? 0) >= PACIFIC_LNG_THRESHOLD)
-const EURASIA_AGENTS = AGENTS_WITH_LOCATION.filter((a) => (a.location?.lng ?? 0) < PACIFIC_LNG_THRESHOLD)
+const AGENTS_WITH_LOCATION = AGENTS.filter(a => a.status === 'active' && a.location !== undefined)
+const JAPAN_AGENTS   = AGENTS_WITH_LOCATION.filter(a => (a.location?.lng ?? 0) >= PACIFIC_LNG_THRESHOLD)
+const EURASIA_AGENTS = AGENTS_WITH_LOCATION.filter(a => (a.location?.lng ?? 0) <  PACIFIC_LNG_THRESHOLD)
 
 // ─── builder ──────────────────────────────────────────────────────────────────
 
@@ -102,38 +110,34 @@ function buildPanel(
     .scale(256 / (2 * Math.PI))
     .translate([128, 128])
 
-  const topLeft = baseProj([lngMin, latMax])
+  const topLeft     = baseProj([lngMin, latMax])
   const bottomRight = baseProj([lngMax, latMin])
   if (!topLeft || !bottomRight) return { transform: '', scale: 1, paths: [], dots: [] }
 
   const regionW = bottomRight[0] - topLeft[0]
   const regionH = bottomRight[1] - topLeft[1]
-
-  const scale = Math.min(width / regionW, height / regionH) * MAP_FILL_FACTOR
+  const scale   = Math.min(width / regionW, height / regionH) * MAP_FILL_FACTOR
 
   const regionCx = (topLeft[0] + bottomRight[0]) / 2
   const regionCy = (topLeft[1] + bottomRight[1]) / 2
-  const centerX = width / 2
-  const centerY = height / 2
-  const tx = centerX - regionCx * scale
-  const ty = centerY - regionCy * scale
+  const tx = width  / 2 - regionCx * scale
+  const ty = height / 2 - regionCy * scale
 
   const transform = `translate(${tx.toFixed(4)},${ty.toFixed(4)}) scale(${scale.toFixed(6)})`
-  const pathGen = d3geo.geoPath().projection(baseProj)
-
-  const paths = features.map((f) => pathGen(f as Parameters<typeof pathGen>[0]) ?? '').filter(Boolean)
+  const pathGen   = d3geo.geoPath().projection(baseProj)
+  const paths     = features.map(f => pathGen(f as Parameters<typeof pathGen>[0]) ?? '').filter(Boolean)
 
   const dots = agents
-    .map((a) => {
+    .map(a => {
       const loc = a.location
       if (!loc) return null
       const raw = baseProj([loc.lng, loc.lat])
       if (!raw) return null
       return {
-        id: a.id,
-        city: loc.city,
-        x: raw[0] * scale + tx,
-        y: raw[1] * scale + ty,
+        id:          a.id,
+        city:        CITY_DISPLAY[a.id] ?? loc.city,
+        x:           raw[0] * scale + tx,
+        y:           raw[1] * scale + ty,
         labelOffset: LABEL_OFFSETS[a.id] ?? DEFAULT_LABEL_OFFSET,
       }
     })
@@ -142,15 +146,96 @@ function buildPanel(
   return { transform, scale, paths, dots }
 }
 
+// ─── radar pin ────────────────────────────────────────────────────────────────
+
+function RadarPin({
+  dot,
+  active,
+  onHover,
+}: {
+  dot: Dot
+  active: boolean
+  onHover: (id: string | null) => void
+}): JSX.Element {
+  const lx = dot.x + dot.labelOffset.x
+  const ly = dot.y + dot.labelOffset.y
+  const hasLeader = Math.abs(dot.labelOffset.x) > 20
+  const leaderX2  = dot.labelOffset.x < 0 ? lx + 95 : lx
+
+  return (
+    <g
+      onMouseEnter={() => { onHover(dot.id) }}
+      onMouseLeave={() => { onHover(null) }}
+      style={{ cursor: 'default' }}
+    >
+      {/* Leader line */}
+      {hasLeader && (
+        <line
+          x1={dot.x} y1={dot.y}
+          x2={leaderX2} y2={ly}
+          stroke={MAP_STYLE.leaderLine}
+          strokeWidth={0.7}
+        />
+      )}
+
+      {/* Pulse ring 1 — slow outer */}
+      <circle cx={dot.x} cy={dot.y} r={4} fill="none" stroke={MAP_STYLE.dotGlow} strokeWidth={0.8} opacity={0}>
+        <animate attributeName="r"       values="4;22;22"    dur="2.4s" repeatCount="indefinite" begin="0s" />
+        <animate attributeName="opacity" values="0.6;0;0"    dur="2.4s" repeatCount="indefinite" begin="0s" />
+      </circle>
+
+      {/* Pulse ring 2 — offset */}
+      <circle cx={dot.x} cy={dot.y} r={4} fill="none" stroke={MAP_STYLE.dotGlow} strokeWidth={0.8} opacity={0}>
+        <animate attributeName="r"       values="4;22;22"    dur="2.4s" repeatCount="indefinite" begin="1.2s" />
+        <animate attributeName="opacity" values="0.6;0;0"    dur="2.4s" repeatCount="indefinite" begin="1.2s" />
+      </circle>
+
+      {/* Static outer ring */}
+      <circle
+        cx={dot.x} cy={dot.y}
+        r={active ? 9 : 6}
+        fill="none"
+        stroke={MAP_STYLE.dotGlow}
+        strokeWidth={0.6}
+        opacity={active ? 0.6 : 0.25}
+      />
+
+      {/* Core dot */}
+      <circle
+        cx={dot.x} cy={dot.y}
+        r={active ? 4 : 3}
+        fill={active ? MAP_STYLE.dotActive : MAP_STYLE.dot}
+      />
+
+      {/* City label */}
+      <text
+        x={lx} y={ly}
+        fontSize={10}
+        fill={active ? MAP_STYLE.labelActive : MAP_STYLE.label}
+        fontFamily={MAP_STYLE.font}
+        letterSpacing={1.2}
+      >
+        {dot.city}
+      </text>
+
+      {/* Agent ID */}
+      <text
+        x={lx} y={ly + 13}
+        fontSize={8}
+        fill={MAP_STYLE.agentId}
+        fontFamily={MAP_STYLE.font}
+        letterSpacing={0.6}
+      >
+        AGENT-{dot.id}
+      </text>
+    </g>
+  )
+}
+
 // ─── SVG panel ────────────────────────────────────────────────────────────────
 
 function PanelSvg({
-  panel,
-  width,
-  height,
-  hovered,
-  onHover,
-  clipId,
+  panel, width, height, hovered, onHover, clipId,
 }: {
   panel: MapPanel
   width: number
@@ -179,64 +264,14 @@ function PanelSvg({
         ))}
       </g>
 
-      {panel.dots.map((dot) => {
-        const active = hovered === dot.id
-        const lx = dot.x + dot.labelOffset.x
-        const ly = dot.y + dot.labelOffset.y
-        return (
-          <g
-            key={dot.id}
-            onMouseEnter={() => {
-              onHover(dot.id)
-            }}
-            onMouseLeave={() => {
-              onHover(null)
-            }}
-            style={{ cursor: 'default' }}
-          >
-            {Math.abs(dot.labelOffset.x) > 20 && (
-              <line
-                x1={dot.x}
-                y1={dot.y}
-                x2={dot.labelOffset.x < 0 ? lx + 80 : lx}
-                y2={ly}
-                stroke={MAP_STYLE.leaderLine}
-                strokeWidth={0.5}
-              />
-            )}
-            <circle
-              cx={dot.x}
-              cy={dot.y}
-              r={active ? 9 : 5}
-              fill="none"
-              stroke={MAP_STYLE.dotRing}
-              strokeWidth={0.5}
-              opacity={MAP_STYLE.dotRingOpacity}
-            />
-            <circle cx={dot.x} cy={dot.y} r={2.5} fill={active ? MAP_STYLE.dotActive : MAP_STYLE.dot} />
-            <text
-              x={lx}
-              y={ly}
-              fontSize={8}
-              fill={active ? MAP_STYLE.labelActive : MAP_STYLE.label}
-              fontFamily={MAP_STYLE.font}
-              letterSpacing={1}
-            >
-              {dot.city}
-            </text>
-            <text
-              x={lx}
-              y={ly + 10}
-              fontSize={6.5}
-              fill={MAP_STYLE.agentId}
-              fontFamily={MAP_STYLE.font}
-              letterSpacing={0.5}
-            >
-              AGENT-{dot.id}
-            </text>
-          </g>
-        )
-      })}
+      {panel.dots.map(dot => (
+        <RadarPin
+          key={dot.id}
+          dot={dot}
+          active={hovered === dot.id}
+          onHover={onHover}
+        />
+      ))}
     </svg>
   )
 }
@@ -245,8 +280,8 @@ function PanelSvg({
 
 export function MapSection(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [dims, setDims] = useState({ w: 800, h: 480 })
-  const [main, setMain] = useState<MapPanel | null>(null)
+  const [dims, setDims]   = useState({ w: 800, h: 480 })
+  const [main, setMain]   = useState<MapPanel | null>(null)
   const [inset, setInset] = useState<MapPanel | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
 
@@ -260,50 +295,47 @@ export function MapSection(): JSX.Element {
       if (width > 0 && height > 0) setDims({ w: Math.round(width), h: Math.round(height) })
     })
     observer.observe(el)
-    return (): void => {
-      observer.disconnect()
-    }
+    return (): void => { observer.disconnect() }
   }, [])
 
-  useEffect(() => {
+  useEffect((): (() => void) => {
     let cancelled = false
 
     async function load(): Promise<void> {
       const d3geo = await import('d3-geo')
-      const topo = await fetch(WORLD_ATLAS_URL)
-        .then((r) => r.json())
+      const topo  = await fetch(WORLD_ATLAS_URL)
+        .then(r => r.json())
         .then((data: unknown) => data as Topology)
 
       if (cancelled) return
 
-      const countries = topo.objects['countries'] as MultiPolygon
+      const countries  = topo.objects['countries'] as MultiPolygon
+       
       const collection = topojsonClient.feature(topo, countries) as unknown as { features: GeoFeature[] }
-      const features = collection.features
+      const features   = collection.features
 
       const insetW = Math.round(dims.w * INSET_WIDTH_RATIO)
       const insetH = Math.round(dims.h * INSET_HEIGHT_RATIO)
 
       setMain(buildPanel(d3geo, features, EURASIA_AGENTS, BOUNDS_EURASIA, dims.w, dims.h))
-      setInset(buildPanel(d3geo, features, JAPAN_AGENTS, BOUNDS_JAPAN, insetW, insetH))
+      setInset(buildPanel(d3geo, features, JAPAN_AGENTS,  BOUNDS_JAPAN,   insetW, insetH))
     }
 
     void load()
-    return (): void => {
-      cancelled = true
-    }
+    return (): void => { cancelled = true }
   }, [dims])
 
-  const insetW = Math.round(dims.w * INSET_WIDTH_RATIO)
-  const insetH = Math.round(dims.h * INSET_HEIGHT_RATIO)
+  const insetW    = Math.round(dims.w * INSET_WIDTH_RATIO)
+  const insetH    = Math.round(dims.h * INSET_HEIGHT_RATIO)
   const showInset = inset !== null && JAPAN_AGENTS.length > 0
 
   return (
     <div className="flex flex-col h-full gap-3">
       <div>
-        <div className="text-[0.55rem] tracking-[0.25em] uppercase mb-1" style={{ color: MAP_STYLE.agentId }}>
+        <div className="text-sm tracking-[0.25em] uppercase mb-1" style={{ color: MAP_STYLE.agentId }}>
           FIELD DEPLOYMENT — UNIT-7
         </div>
-        <div className="text-[0.6rem] tracking-[0.1em]" style={{ color: MAP_STYLE.leaderLine }}>
+        <div className="text-xs tracking-[0.1em]" style={{ color: MAP_STYLE.leaderLine }}>
           {AGENTS_WITH_LOCATION.length} AGENTS TRACKED &nbsp;·&nbsp; SECTORS: EURASIA
           {JAPAN_AGENTS.length > 0 ? ' / PACIFIC' : ''}
         </div>
@@ -325,7 +357,7 @@ export function MapSection(): JSX.Element {
           />
         ) : (
           <div
-            className="w-full h-full flex items-center justify-center text-[0.6rem] tracking-[0.2em]"
+            className="w-full h-full flex items-center justify-center text-sm tracking-[0.2em]"
             style={{ background: MAP_STYLE.bg, color: MAP_STYLE.leaderLine }}
           >
             LOADING CARTOGRAPHIC DATA...
@@ -336,19 +368,19 @@ export function MapSection(): JSX.Element {
           <div
             className="absolute bottom-0 right-0 overflow-hidden"
             style={{
-              width: insetW,
-              height: insetH,
-              borderTop: `1px solid ${MAP_STYLE.leaderLine}`,
+              width:      insetW,
+              height:     insetH,
+              borderTop:  `1px solid ${MAP_STYLE.leaderLine}`,
               borderLeft: `1px solid ${MAP_STYLE.leaderLine}`,
             }}
           >
             <div
-              className="absolute top-0 left-0 z-10 px-2 py-0.5 text-[0.5rem] tracking-[0.18em] select-none"
+              className="absolute top-0 left-0 z-10 px-2 py-0.5 text-xs tracking-[0.18em] select-none"
               style={{
-                background: MAP_STYLE.bg,
-                color: MAP_STYLE.leaderLine,
+                background:   MAP_STYLE.bg,
+                color:        MAP_STYLE.leaderLine,
                 borderBottom: `1px solid ${MAP_STYLE.border}`,
-                borderRight: `1px solid ${MAP_STYLE.border}`,
+                borderRight:  `1px solid ${MAP_STYLE.border}`,
               }}
             >
               SECTOR: PACIFIC
