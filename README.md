@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# 7ka.dev
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Public-facing site for a small anonymous engineering collective. Built as a layered terminal experience — the user arrives at a gateway machine, thinks they are the intruder. They are not.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19 + TypeScript
+- Vite 7
+- Tailwind CSS 4
+- Zustand
+- d3-geo + topojson (field map)
 
-## React Compiler
+## Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+  app/          — root, routing between machines
+  pages/
+    gateway/    — terminal entry point (GatewayMachine)
+    mainframe/  — inner OS shell (MainframeMachine)
+  widgets/      — UI shells: terminal, OS chrome, windows, sidebar
+  features/     — terminal command resolution, input handling
+  entities/     — agent and operation data models
+  shared/       — store, config, lib utilities, shared UI
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Architecture
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Two machines, one store:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **gateway** — pseudo OS chrome (macOS or Windows, detected via userAgent) wrapping a green-phosphor terminal. Entry point for all users.
+- **mainframe** — amber-phosphor OS shell with file explorer UI, opened via SSH from the terminal (`ssh unit7`).
+
+Windows within the mainframe are managed by `useWindowManager` — multiple windows, draggable, focusable, cascading.
+
+## Dev
+
+```bash
+npm install
+npm run dev
 ```
+
+## Deploy
+
+Deploys automatically to GitHub Pages on push to `master` via GitHub Actions. See `.github/workflows/deploy.yml`.
+
+```bash
+npm run build   # build only
+```
+
+## Content
+
+Agent bios, operation names, and collective copy are placeholders (`[PLACEHOLDER]`). Content is managed in:
+
+- `src/entities/agent/model.ts`
+- `src/entities/operation/model.ts`
+- `src/shared/config/` — ASCII logo, boot sequence copy
