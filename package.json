@@ -1,8 +1,23 @@
 {
   "name": "7ka",
+  "description": "7ka.dev — engineering collective",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
+  "keywords": [
+    "7ka",
+    "engineering",
+    "collective",
+    "portfolio"
+  ],
+  "homepage": "https://7ka.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/7ka-dev/7ka.dev"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
