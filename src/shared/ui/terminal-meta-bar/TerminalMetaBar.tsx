@@ -1,26 +1,7 @@
-import { useEffect, useState } from 'react'
 import type { JSX } from 'react'
 
-interface IpData {
-  city: string
-  country_name: string
-}
-
 function useLocation(): string {
-  const [location, setLocation] = useState<string>('RESOLVING...')
-
-  useEffect((): void => {
-    fetch('https://ipapi.co/json/')
-      .then((r) => r.json())
-      .then((data: IpData) => {
-        setLocation(`${data.city.toUpperCase()}, ${data.country_name.toUpperCase()}`)
-      })
-      .catch(() => {
-        setLocation('UNKNOWN')
-      })
-  }, [])
-
-  return location
+  return Intl.DateTimeFormat().resolvedOptions().timeZone.toUpperCase()
 }
 
 export function TerminalMetaBar(): JSX.Element {
