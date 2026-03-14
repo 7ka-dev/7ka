@@ -7,6 +7,7 @@ import { AgentDossier } from '@/pages/mainframe/sections/AgentsSection'
 import { MapSection } from '@/pages/mainframe/sections/MapSection'
 import { OpsSection } from '@/pages/mainframe/sections/OpsSection'
 import { OpDossier } from '@/pages/mainframe/sections/OpsSection'
+import { OS_VERSION } from '@/shared/config'
 import { useAppStore } from '@/shared/store'
 import { ScanLines } from '@/shared/ui/scanlines'
 import { OsSidebar } from '@/widgets/os-sidebar'
@@ -43,7 +44,7 @@ function OsTopBar(): JSX.Element {
       style={{ borderColor: '#2a2015', background: '#0a0905' }}
     >
       <span className="text-base tracking-[0.25em] uppercase" style={{ color: '#5a4a2a' }}>
-        UNIT-7 // BUILD 0.7.4-UNSTABLE
+        UNIT-7 // BUILD {OS_VERSION.toUpperCase()}-UNSTABLE
       </span>
       <div className="flex items-center gap-8 text-sm tracking-[0.15em] uppercase" style={{ color: '#3a2e18' }}>
         <span>

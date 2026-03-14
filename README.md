@@ -48,6 +48,26 @@ Deploys automatically to GitHub Pages on push to `master` via GitHub Actions. Se
 npm run build   # build only
 ```
 
+## Releasing a version
+
+1. Stage and commit all changes first:
+   ```bash
+   git add .
+   git commit -m "your message"
+   ```
+
+2. Bump the version (updates `package.json`, commits, and tags):
+   ```bash
+   npm version 0.x.x
+   ```
+
+3. Push with tags:
+   ```bash
+   git push --follow-tags
+   ```
+
+The version is injected at build time via Vite and displayed in the OS shell top bar.
+
 ## Content
 
 Agent bios, operation names, and collective copy are placeholders (`[PLACEHOLDER]`). Content is managed in:
