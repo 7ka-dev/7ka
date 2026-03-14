@@ -4,8 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+import { version } from './package.json'
+
 export default defineConfig({
-  base: '/7ka/',
+  define: {
+    APP_VERSION: JSON.stringify(version),
+  },
+  base: '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
